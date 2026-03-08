@@ -1,0 +1,17 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: simplezzz-fastapi
+    ports:
+      - "8000:8000"
+    environment:
+      TZ: Asia/Shanghai
+      DB_PATH: /data/data.db
+    volumes:
+      - .app_data:/data
+    restart: unless-stopped
+
+volumes:
+  app_data:

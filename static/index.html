@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>7日内容看板</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <div class="bg-shape shape-a"></div>
+    <div class="bg-shape shape-b"></div>
+    <main class="container">
+      <section class="hero">
+        <p class="tag">FastAPI + SQLite</p>
+        <h1>7日内容看板</h1>
+        <p class="sub">默认展示最新一天的数据，可按日期快速切换查看。</p>
+      </section>
+
+      <section class="panel">
+        <h2>选择日期</h2>
+        <div id="dayTabs" class="day-tabs"></div>
+      </section>
+
+      <section class="panel content-panel">
+        <div class="panel-header">
+          <h2 id="contentTitle">内容列表</h2>
+        </div>
+        <div id="list" class="list"></div>
+      </section>
+    </main>
+
+    <script>
+      const dayTabs = document.getElementById("dayTabs");
+      const list = document.getElementById("list");
+      const contentTitle = document.getElementById("contentTitle");
+      let selectedDay = null;
+
+      function escapeHtml(text) {
+        return String(text)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+
+      function renderEmpty(message) {
+        list.innerHTML = `<div class="empty">${escapeHtml(message)}</div>`;
+      }
+
+      function renderTabs(days) {
+        dayTabs.innerHTML = "";
+        if (!days.length) {
+          dayTabs.innerHTML = `<div class="empty">最近 7 天暂无数据</div>`;
+          return;
+        }
+
+        days.forEach((day) => {
+          const button = document.createElement("button");
+          button.className = "day-tab" + (day === selectedDay ? " active" : "");
+          button.textContent = day;
+          button.addEventListener("click", () => {
+            selectedDay = day;
+            renderTabs(days);
+            loadItems(day);
+          });
+          dayTabs.appendChild(button);
+        });
+      }
+
+      function renderItems(day, items) {
+        contentTitle.textContent = day ? `${day} 的内容` : "内容列表";
+        if (!items.length) {
+          renderEmpty("该日期暂无内容");
+          return;
+        }
+
+        list.innerHTML = items
+          .map((item, idx) => {
+            const text = `${escapeHtml(item.title)}：${escapeHtml(item.content).replaceAll("\n", "<br/>")}`;
+            const imageHtml = item.image
+              ? `<img class="item-image" src="${escapeHtml(item.image)}" alt="内容图片" loading="lazy" onerror="this.style.display='none'" />`
+              : "";
+            const divider = idx < items.length - 1 ? `<hr class="divider" />` : "";
+            return `
+              <article class="item">
+                <p class="text">${text}</p>
+                ${imageHtml}
+                ${divider}
+              </article>
+            `;
+          })
+          .join("");
+      }
+
+      async function loadItems(day) {
+        const url = day ? `/api/items?day=${encodeURIComponent(day)}` : "/api/items";
+        const res = await fetch(url);
+        if (!res.ok) {
+          renderEmpty("加载失败，请稍后重试");
+          return;
+        }
+        const data = await res.json();
+        renderItems(data.day, data.items || []);
+      }
+
+      async function init() {
+        renderEmpty("正在加载...");
+        const res = await fetch("/api/days");
+        if (!res.ok) {
+          renderEmpty("日期加载失败");
+          return;
+        }
+        const data = await res.json();
+        const days = data.days || [];
+        selectedDay = days[0] || null;
+        renderTabs(days);
+        await loadItems(selectedDay);
+      }
+
+      init();
+    </script>
+  </body>
+</html>
