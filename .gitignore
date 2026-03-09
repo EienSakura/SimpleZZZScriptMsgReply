@@ -21,6 +21,8 @@ dist/
 *.db
 *.sqlite3
 *.log
+.app_data/
+image_cache/
 
 # IDE / 编辑器
 .idea/

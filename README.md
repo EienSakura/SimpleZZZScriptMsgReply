@@ -5,6 +5,7 @@
 ## 功能说明
 
 - 提供 `POST` 接口接收 JSON 数据并写入 SQLite。
+- `image` 字段使用 base64 传图，服务端会解码后缓存到本地目录，并和数据库一样只保留最近 7 天。
 - 仅保留最近 7 天的数据（写入和读取时会自动清理旧数据）。
 - 提供前端页面按天查看内容，默认展示最新一天。
 - 每条内容展示格式为：`title：content`、换行显示图片、分割线后显示下一条。
@@ -77,8 +78,9 @@ docker compose down
 说明：
 
 - 服务端口映射为 `8000:8000`。
-- SQLite 数据库通过 `app_data` 命名卷持久化。
+- 当前示例使用宿主机目录 `./.app_data` 持久化数据库和图片缓存。
 - 容器内数据库路径由环境变量 `DB_PATH=/data/data.db` 指定。
+- 容器内图片缓存路径由环境变量 `IMAGE_CACHE_DIR=/data/image_cache` 指定。
 
 ## 接口说明
 
@@ -92,7 +94,7 @@ docker compose down
 {
   "title": "示例标题",
   "content": "示例内容",
-  "image": "https://example.com/a.jpg",
+  "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...",
   "timestamp": "2026-03-08T12:00:00+08:00"
 }
 ```
@@ -100,7 +102,9 @@ docker compose down
 说明：
 
 - `timestamp` 推荐使用 ISO-8601 格式。
+- 也兼容 Unix 时间戳（秒或毫秒）。
 - 服务只接受最近 7 天内的 `timestamp`。
+- `image` 支持 `data:image/png;base64,...` 或纯 base64 字符串。
 
 ### 2) 获取可选日期
 
@@ -125,3 +129,4 @@ curl -X POST "http://127.0.0.1:8000/api/items" \
 
 - 系统会在启动、写入、读取时清理数据库中超出最近 7 天的数据。
 - 判定依据为 `timestamp` 对应的事件时间。
+- 图片缓存目录也会按 7 天策略同步清理。

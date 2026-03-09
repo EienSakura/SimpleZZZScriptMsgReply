@@ -9,9 +9,7 @@ services:
     environment:
       TZ: Asia/Shanghai
       DB_PATH: /data/data.db
+      IMAGE_CACHE_DIR: /data/image_cache
     volumes:
       - .app_data:/data
     restart: unless-stopped
-
-volumes:
-  app_data:
