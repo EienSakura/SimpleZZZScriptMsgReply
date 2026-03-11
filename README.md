@@ -7,6 +7,9 @@
 - `better-genshin-impact`
 - `March7th Assistant`
 
+## 项目截图
+![img.png](images/screenshot.png)
+
 ## 环境要求
 
 - Python 3.11+
